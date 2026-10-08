@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบสังเกตการณ์โรงงาน บจก.หมิงหาญ 789</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Sarabun', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 500: '#0ea5e9', 600: '#0284c7', 900: '#0c4a6e' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .file-area { border: 2px dashed #cbd5e1; transition: all 0.2s; }
+        .file-area:hover { border-color: #0ea5e9; background-color: #f0f9ff; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        textarea { resize: vertical; }
+        /* Fix for iOS input widths */
+        input[type="date"], input[type="time"], select {
+            -webkit-appearance: none;
+            min-height: 2.5rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800 font-sans antialiased" x-data="appData()" x-init="initApp()">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20">
+                <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-1 sm:mr-2">
+                    <div class="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 bg-brand-600 rounded-lg flex items-center justify-center text-white text-lg sm:text-xl shadow">
+                        <i class="fas fa-industry"></i>
+                    </div>
+                    <div class="flex flex-col min-w-0 leading-tight justify-center overflow-hidden pr-2">
+                        <span class="font-bold text-sm sm:text-lg text-gray-900 truncate">ระบบสังเกตการณ์โรงงาน</span>
+                        <span class="font-semibold text-xs sm:text-sm text-brand-600 truncate mt-0.5">บจก.หมิงหาญ 789</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-1 sm:space-x-2 flex-shrink-0">
+                    <button @click="currentView = 'reporting'" 
+                            :class="{'bg-brand-50 text-brand-600 ring-1 ring-brand-200': currentView === 'reporting', 'text-gray-500 hover:bg-gray-50': currentView !== 'reporting'}" 
+                            class="px-2 sm:px-4 py-2 rounded-md text-[13px] sm:text-base font-semibold transition-all flex items-center gap-1 sm:gap-2">
+                        <i class="fas fa-pen-to-square"></i> <span class="hidden sm:inline">บันทึกรายงาน</span>
+                    </button>
+                    <button @click="currentView = 'dashboard'" 
+                            :class="{'bg-brand-50 text-brand-600 ring-1 ring-brand-200': currentView === 'dashboard', 'text-gray-500 hover:bg-gray-50': currentView !== 'dashboard'}" 
+                            class="px-2 sm:px-4 py-2 rounded-md text-[13px] sm:text-base font-semibold transition-all flex items-center gap-1 sm:gap-2">
+                        <i class="fas fa-chart-line"></i> <span class="hidden sm:inline">แดชบอร์ด</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 mb-20">
+
+        <!-- ========================================== -->
+        <!-- PAGE 1: REPORTING VIEW                     -->
+        <!-- ========================================== -->
+        <div x-show="currentView === 'reporting'" x-transition.opacity x-cloak>
+            
+            <div class="flex justify-center mb-6 sm:mb-8">
+                <div class="bg-white p-1 rounded-lg flex flex-col sm:flex-row w-full max-w-md shadow-sm border border-gray-200 gap-1 sm:gap-0">
+                    <button @click="reportForm = 'daily'" :class="reportForm === 'daily' ? 'bg-brand-500 text-white shadow' : 'text-gray-600 hover:bg-gray-50'" class="flex-1 px-4 sm:px-6 py-3 sm:py-2.5 rounded-md text-sm sm:text-base font-medium transition-all text-center">
+                        รายงานประจำวัน
+                    </button>
+                    <button @click="reportForm = 'urgent'" :class="reportForm === 'urgent' ? 'bg-red-500 text-white shadow' : 'text-gray-600 hover:bg-gray-50'" class="flex-1 px-4 sm:px-6 py-3 sm:py-2.5 rounded-md text-sm sm:text-base font-medium transition-all text-center">
+                        เหตุด่วนสำคัญ <i class="fas fa-exclamation-circle text-xs ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- DAILY REPORT FORM -->
+            <div x-show="reportForm === 'daily'" x-transition x-cloak class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden max-w-5xl mx-auto w-full">
+                <div class="bg-slate-800 px-4 sm:px-6 py-4 text-white">
+                    <h2 class="text-lg sm:text-xl font-bold text-center">แบบรายงานผลการปฏิบัติหน้าที่ประจำวัน</h2>
+                    <p class="text-center text-slate-300 text-xs sm:text-sm mt-1">ชุดปฏิบัติการสังเกตการณ์ฯ บจก. หมิงหาญ 789</p>
+                </div>
+                
+                <form @submit.prevent="submitForm('daily')" class="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 bg-slate-50 p-4 sm:p-5 rounded-lg border border-slate-200 overflow-hidden">
+                        <div class="w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">วันที่ปฏิบัติหน้าที่ *</label>
+                            <input type="date" x-model="dailyData.dailyDate" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
+                        </div>
+                        <div class="w-full md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">เวลาเข้ากะ (ตั้งแต่ - ถึง) *</label>
+                            <div class="flex items-center gap-2">
+                                <input type="time" x-model="dailyData.shiftStartTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
+                                <span class="text-gray-500 font-bold">-</span>
+                                <input type="time" x-model="dailyData.shiftEndTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
+                            </div>
+                        </div>
+                        <div class="w-full relative">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">ผลัดที่ *</label>
+                            <div class="relative">
+                                <select x-model="dailyData.shift" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border appearance-none pr-8">
+                                    <option value="" disabled>-- เลือกผลัด --</option>
+                                    <option value="1">ผลัดที่ 1</option>
+                                    <option value="2">ผลัดที่ 2</option>
+                                    <option value="3">ผลัดที่ 3</option>
+                                    <option value="ทุกผลัด">ทุกผลัด</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <div class="w-full">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">พื้นที่/จุดสังเกตการณ์ *</label>
+                                <textarea x-model="dailyData.dailyLocation" required rows="2" class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border" placeholder="ระบุพื้นที่..."></textarea>
+                            </div>
+                            <div class="w-full">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">หัวหน้าชุด *</label>
+                                <input type="text" x-model="dailyData.dailyTeamLeader" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border" placeholder="ชื่อ-สกุล">
+                            </div>
+                        </div>
+                        <div class="md:col-span-4 w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">รายชื่อผู้ปฏิบัติหน้าที่ (5 คน)</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div class="flex items-center gap-2 bg-white rounded border border-gray-300 focus-within:ring-1 focus-within:ring-brand-500 overflow-hidden px-2"><span class="text-sm text-gray-500 w-4 font-medium">1.</span><input type="text" x-model="dailyData.member1" required class="w-full p-2 outline-none border-none bg-transparent" placeholder="ชื่อ-สกุล (บังคับ)"></div>
+                                <div class="flex items-center gap-2 bg-white rounded border border-gray-300 focus-within:ring-1 focus-within:ring-brand-500 overflow-hidden px-2"><span class="text-sm text-gray-500 w-4 font-medium">2.</span><input type="text" x-model="dailyData.member2" class="w-full p-2 outline-none border-none bg-transparent" placeholder="ชื่อ-สกุล"></div>
+                                <div class="flex items-center gap-2 bg-white rounded border border-gray-300 focus-within:ring-1 focus-within:ring-brand-500 overflow-hidden px-2"><span class="text-sm text-gray-500 w-4 font-medium">3.</span><input type="text" x-model="dailyData.member3" class="w-full p-2 outline-none border-none bg-transparent" placeholder="ชื่อ-สกุล"></div>
+                                <div class="flex items-center gap-2 bg-white rounded border border-gray-300 focus-within:ring-1 focus-within:ring-brand-500 overflow-hidden px-2"><span class="text-sm text-gray-500 w-4 font-medium">4.</span><input type="text" x-model="dailyData.member4" class="w-full p-2 outline-none border-none bg-transparent" placeholder="ชื่อ-สกุล"></div>
+                                <div class="flex items-center gap-2 bg-white rounded border border-gray-300 focus-within:ring-1 focus-within:ring-brand-500 overflow-hidden px-2"><span class="text-sm text-gray-500 w-4 font-medium">5.</span><input type="text" x-model="dailyData.member5" class="w-full p-2 outline-none border-none bg-transparent" placeholder="ชื่อ-สกุล"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ตารางสังเกตการณ์ -->
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 border-l-4 border-brand-500 pl-3">1. สถานะการทดลองเดินเครื่องจักร</h3>
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm w-full">
+                            <table class="w-full text-sm min-w-[600px]">
+                                <thead class="bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-3 py-3 text-left font-semibold text-gray-700 w-1/4">รายการ</th>
+                                        <th class="px-3 py-3 text-left font-semibold text-gray-700 w-1/4">ผลการสังเกตการณ์</th>
+                                        <th class="px-3 py-3 text-left font-semibold text-gray-700 w-1/2">รายละเอียด/ข้อสังเกต</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <template x-for="(item, key) in dailyData.observations" :key="key">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-3 py-3 font-medium text-gray-800" x-text="observationLabels[key]"></td>
+                                            <td class="px-3 py-3">
+                                                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="radio" :name="'obs_'+key" value="ไม่พบ" x-model="item.status" class="w-4 h-4 text-green-600 focus:ring-green-500 bg-white">
+                                                        <span class="ml-1.5 text-gray-700">ไม่พบ</span>
+                                                    </label>
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="radio" :name="'obs_'+key" value="พบ" x-model="item.status" class="w-4 h-4 text-red-600 focus:ring-red-500 bg-white">
+                                                        <span class="ml-1.5 text-gray-700">พบ</span>
+                                                    </label>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <textarea x-model="item.detail" class="w-full rounded border-gray-300 p-2 border text-sm focus:ring-1 focus:ring-brand-500 outline-none bg-white box-border" rows="2" placeholder="ระบุรายละเอียด..."></textarea>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- เหตุการณ์ระหว่างผลัด -->
+                    <div class="w-full">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                            <h3 class="text-base sm:text-lg font-bold text-gray-900 border-l-4 border-brand-500 pl-3">2. เหตุการณ์/ข้อเท็จจริงที่พบในระหว่างผลัด</h3>
+                            <button type="button" @click="addEventLog()" class="text-xs sm:text-sm bg-brand-100 text-brand-700 px-3 py-1.5 rounded hover:bg-brand-200 font-medium shadow-sm border border-brand-200"><i class="fas fa-plus"></i> เพิ่มเหตุการณ์อื่น</button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <template x-for="(event, index) in dailyData.eventsLog" :key="index">
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-5 relative shadow-sm w-full overflow-hidden">
+                                    <div class="absolute top-2 right-2 flex items-center bg-gray-100 px-2 py-1 rounded text-xs font-bold text-gray-500">เหตุการณ์ที่ <span x-text="index+1" class="ml-1"></span></div>
+                                    <button type="button" @click="removeEventLog(index)" class="absolute top-2 right-16 text-red-500 hover:text-red-700 bg-red-50 rounded px-2 py-1 text-xs border border-red-100" x-show="dailyData.eventsLog.length > 1"><i class="fas fa-trash-alt mr-1"></i> ลบ</button>
+                                    
+                                    <div class="flex flex-col mb-4 gap-2 mt-4 sm:mt-0 w-full">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-gray-700 whitespace-nowrap">- เวลา</span>
+                                            <input type="time" x-model="event.time" class="rounded border p-1.5 text-sm w-28 focus:ring-1 focus:ring-brand-500 outline-none bg-white box-border">
+                                            <span class="text-sm font-semibold text-gray-700 whitespace-nowrap">น. พบ/สังเกตว่า</span>
+                                        </div>
+                                        <textarea x-model="event.detail" class="w-full max-w-full rounded border p-2 text-sm focus:ring-1 focus:ring-brand-500 outline-none box-border" rows="2" placeholder="ระบุสิ่งที่พบอย่างละเอียด..."></textarea>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                        <div class="bg-orange-50 p-3 border border-orange-100 rounded-lg text-sm w-full">
+                                            <p class="font-medium mb-2 text-gray-800"><i class="fas fa-users text-orange-500 mr-1"></i> ประชาชนได้รับผลกระทบหรือไม่?</p>
+                                            <div class="flex flex-col gap-2">
+                                                <label class="flex items-center cursor-pointer">
+                                                    <input type="radio" :name="'evt_impact_'+index" value="ไม่มี" x-model="event.impactStatus" class="w-4 h-4 text-brand-600 bg-white">
+                                                    <span class="ml-2">ไม่มี</span>
+                                                </label>
+                                                <div class="flex flex-col gap-1 w-full">
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="radio" :name="'evt_impact_'+index" value="มี" x-model="event.impactStatus" class="w-4 h-4 text-red-600 bg-white">
+                                                        <span class="ml-2 font-medium text-red-700">มี (โปรดระบุรายละเอียด)</span>
+                                                    </label>
+                                                    <textarea x-model="event.impactDetail" :disabled="event.impactStatus !== 'มี'" class="w-full max-w-full rounded border p-2 text-sm mt-1 outline-none focus:ring-1 focus:ring-red-400 disabled:bg-gray-100 bg-white box-border" rows="2" placeholder="ระบุผู้ได้รับผลกระทบ/อาการ..."></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-blue-50 p-3 border border-blue-100 rounded-lg text-sm w-full">
+                                            <p class="font-medium mb-2 text-gray-800"><i class="fas fa-paperclip text-brand-500 mr-1"></i> หลักฐานประกอบเหตุการณ์นี้</p>
+                                            <p class="text-[11px] text-gray-500 mb-2 leading-tight">รองรับภาพ/เสียง/วิดีโอ (สูงสุด 5 ไฟล์, ไม่เกิน 35MB/ไฟล์)</p>
+                                            
+                                            <div class="file-area rounded border border-dashed border-brand-300 p-3 text-center cursor-pointer bg-white hover:bg-brand-50 w-full" @click="document.getElementById('daily_file_'+index).click()">
+                                                <i class="fas fa-camera text-xl text-brand-400 mb-1"></i>
+                                                <p class="text-xs font-medium text-brand-700">แตะเพื่อเลือกไฟล์</p>
+                                                <input type="file" :id="'daily_file_'+index" @change="handleFileUpload($event, 'daily', index)" multiple accept="image/*,video/mp4,video/quicktime,audio/*,.pdf" class="hidden">
+                                            </div>
+                                            
+                                            <div x-show="event.files.length > 0" class="mt-2 space-y-1 w-full">
+                                                <template x-for="(f, fIndex) in event.files" :key="fIndex">
+                                                    <div class="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-gray-200 text-xs shadow-sm">
+                                                        <div class="flex items-center truncate max-w-[85%]">
+                                                            <i class="fas" :class="f.mimeType.includes('video') ? 'fa-video text-red-400' : 'fa-image text-blue-400'" class="mr-1.5 flex-shrink-0"></i>
+                                                            <span class="truncate pr-1" x-text="f.name"></span>
+                                                        </div>
+                                                        <button type="button" @click.stop="removeFile('daily', index, fIndex)" class="text-red-500 px-1.5 hover:bg-red-50 rounded flex-shrink-0"><i class="fas fa-times"></i></button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- ข้อสรุป -->
+                    <div class="bg-slate-50 p-4 sm:p-5 rounded-lg border border-slate-200 w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 border-l-4 border-brand-500 pl-3">3. ข้อสรุปการปฏิบัติหน้าที่ประจำวัน *</h3>
+                        <div class="space-y-2 mb-5">
+                            <label class="flex items-center p-2 rounded hover:bg-white cursor-pointer border border-transparent hover:border-gray-200 transition-colors w-full">
+                                <input type="radio" x-model="dailyData.dailySummary" value="ไม่พบเหตุสำคัญ" required class="w-5 h-5 text-brand-600 bg-white flex-shrink-0">
+                                <span class="ml-2.5 text-sm sm:text-base font-medium">ไม่พบเหตุสำคัญ</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-white cursor-pointer border border-transparent hover:border-gray-200 transition-colors w-full">
+                                <input type="radio" x-model="dailyData.dailySummary" value="พบเหตุ/ข้อเท็จจริงที่ควรติดตาม" class="w-5 h-5 text-yellow-500 bg-white flex-shrink-0">
+                                <span class="ml-2.5 text-sm sm:text-base font-medium">พบเหตุ/ข้อเท็จจริงที่ควรติดตาม</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-white cursor-pointer border border-transparent hover:border-gray-200 transition-colors w-full">
+                                <input type="radio" x-model="dailyData.dailySummary" value="มีเหตุที่รายงานเป็นแบบเหตุด่วนสำคัญแล้ว" class="w-5 h-5 text-red-600 bg-white flex-shrink-0">
+                                <span class="ml-2.5 text-sm sm:text-base font-medium">มีเหตุที่รายงานเป็นแบบเหตุด่วนสำคัญแล้ว</span>
+                            </label>
+                        </div>
+
+                        <div class="border-t border-slate-300 pt-4 max-w-sm w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">ผู้ปฏิบัติหน้าที่/ผู้บันทึก *</label>
+                            <input type="text" x-model="dailyData.dailyRecorder" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border" placeholder="ลงชื่อ">
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <button type="submit" :disabled="isSubmitting" class="w-full sm:w-auto px-8 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg shadow-md transition-all disabled:opacity-50 text-base sm:text-lg">
+                            <i class="fas" :class="isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i> 
+                            <span x-text="isSubmitting ? 'กำลังดำเนินการ...' : 'ส่งรายงานประจำวัน'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- URGENT REPORT FORM -->
+            <div x-show="reportForm === 'urgent'" x-transition x-cloak class="bg-white rounded-xl shadow-lg border border-red-200 overflow-hidden max-w-5xl mx-auto w-full">
+                <div class="bg-red-700 px-4 sm:px-6 py-4 text-white">
+                    <h2 class="text-lg sm:text-xl font-bold text-center flex items-center justify-center gap-2"><i class="fas fa-exclamation-triangle"></i> แบบรายงานเหตุด่วนสำคัญขณะปฏิบัติหน้าที่</h2>
+                    <p class="text-center text-red-100 text-xs sm:text-sm mt-1">ชุดปฏิบัติการสังเกตการณ์ฯ บจก. หมิงหาญ 789</p>
+                </div>
+                
+                <form @submit.prevent="submitForm('urgent')" class="p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+                    <!-- ข้อมูลทั่วไป -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-red-50 p-4 sm:p-5 rounded-lg border border-red-100 overflow-hidden w-full">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2 w-full">
+                            <div class="w-full">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">วันที่เกิดเหตุ *</label>
+                                <input type="date" x-model="urgentData.incidentDate" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-2 focus:ring-red-400 bg-white box-border">
+                            </div>
+                            <div class="w-full">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">เวลา *</label>
+                                <input type="time" x-model="urgentData.incidentTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-2 focus:ring-red-400 bg-white box-border">
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">สถานที่เกิดเหตุ *</label>
+                            <textarea x-model="urgentData.location" required rows="2" class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-2 focus:ring-red-400 bg-white box-border" placeholder="ระบุสถานที่..."></textarea>
+                        </div>
+                        <div class="w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">ผู้รายงาน/ผลัด *</label>
+                            <input type="text" x-model="urgentData.reporter" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-2 focus:ring-red-400 bg-white box-border">
+                        </div>
+                        <div class="w-full">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">หัวหน้าชุด *</label>
+                            <input type="text" x-model="urgentData.teamLeader" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-2 focus:ring-red-400 bg-white box-border">
+                        </div>
+                        <div class="md:col-span-2 bg-white p-4 rounded-lg border border-red-200 shadow-sm w-full">
+                            <label class="block text-base font-bold text-red-600 mb-2">ระดับความเร่งด่วน *</label>
+                            <div class="flex flex-col sm:flex-row gap-3 sm:gap-6 w-full">
+                                <label class="flex items-center cursor-pointer bg-red-50 sm:bg-transparent p-2 sm:p-0 rounded border border-red-100 sm:border-none w-full sm:w-auto"><input type="radio" x-model="urgentData.urgencyLevel" value="ด่วนมาก/ต้องแจ้งทันที" required class="w-5 h-5 text-red-600 bg-white flex-shrink-0"><span class="ml-2 font-bold text-red-700">ด่วนมาก/ต้องแจ้งทันที</span></label>
+                                <label class="flex items-center cursor-pointer bg-orange-50 sm:bg-transparent p-2 sm:p-0 rounded border border-orange-100 sm:border-none w-full sm:w-auto"><input type="radio" x-model="urgentData.urgencyLevel" value="ด่วน" class="w-5 h-5 text-orange-500 bg-white flex-shrink-0"><span class="ml-2 font-bold text-orange-600">ด่วน</span></label>
+                                <label class="flex items-center cursor-pointer bg-yellow-50 sm:bg-transparent p-2 sm:p-0 rounded border border-yellow-100 sm:border-none w-full sm:w-auto"><input type="radio" x-model="urgentData.urgencyLevel" value="ควรติดตาม" class="w-5 h-5 text-yellow-500 bg-white flex-shrink-0"><span class="ml-2 font-bold text-yellow-600">ควรติดตาม</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1. ประเภท -->
+                    <div class="w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 border-l-4 border-red-500 pl-3">1. ประเภทเหตุ (เลือกได้มากกว่า 1)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
+                            <template x-for="(label, key) in incidentTypeLabels" :key="key">
+                                <label class="flex items-center bg-gray-50 p-3 sm:p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-100 transition-colors w-full box-border">
+                                    <input type="checkbox" x-model="urgentData.incidentType[key]" class="w-5 h-5 sm:w-4 sm:h-4 text-red-600 rounded border-gray-300 bg-white flex-shrink-0">
+                                    <span class="ml-2.5 sm:ml-2 text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap" x-text="label"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 2. ข้อเท็จจริง -->
+                    <div class="w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-1 border-l-4 border-red-500 pl-3">2. ข้อเท็จจริงที่พบ *</h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-2 pl-4">(บันทึกตามที่เห็น/ได้ยิน/ได้รับแจ้ง โดยไม่สรุปเกินข้อเท็จจริง)</p>
+                        <textarea x-model="urgentData.factFound" required rows="4" class="w-full max-w-full rounded-lg border-gray-300 p-3 border outline-none focus:ring-2 focus:ring-red-400 shadow-sm bg-white box-border" placeholder="ระบุข้อเท็จจริงที่เกิดขึ้นอย่างละเอียด..."></textarea>
+                    </div>
+
+                    <!-- 3. ผลกระทบ -->
+                    <div class="bg-orange-50 p-4 sm:p-5 rounded-lg border border-orange-200 shadow-sm w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 border-l-4 border-red-500 pl-3">3. ผลกระทบ/ผู้ได้รับผลกระทบ *</h3>
+                        <div class="space-y-3 w-full">
+                            <label class="flex items-center cursor-pointer bg-white p-3 rounded border border-orange-100 w-full box-border">
+                                <input type="radio" x-model="urgentData.impactStatus" value="ไม่พบผู้ได้รับผลกระทบในขณะรายงาน" required class="w-5 h-5 text-red-600 bg-white flex-shrink-0">
+                                <span class="ml-2.5 font-medium text-sm sm:text-base">ไม่พบผู้ได้รับผลกระทบในขณะรายงาน</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer bg-white p-3 rounded border border-orange-100 w-full box-border">
+                                <input type="radio" x-model="urgentData.impactStatus" value="พบ/ได้รับแจ้งจากประชาชน" class="w-5 h-5 text-red-600 mt-0.5 bg-white flex-shrink-0">
+                                <span class="ml-2.5 font-medium text-sm sm:text-base text-red-700">พบ/ได้รับแจ้งจากประชาชน</span>
+                            </label>
+                            
+                            <div x-show="urgentData.impactStatus === 'พบ/ได้รับแจ้งจากประชาชน'" class="pl-2 sm:pl-8 pt-2 space-y-4 w-full" x-transition>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 bg-white p-3 rounded border border-orange-100 w-full box-border">
+                                    <span class="text-sm font-medium whitespace-nowrap">จำนวน</span>
+                                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                                        <input type="number" x-model="urgentData.impactCount" class="w-24 rounded border-gray-300 p-2 border text-sm text-center outline-none focus:ring-1 focus:ring-red-400 bg-white box-border" placeholder="ตัวเลข">
+                                        <span class="text-sm font-medium whitespace-nowrap">ราย/ครัวเรือน</span>
+                                    </div>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-sm mb-1 text-gray-700 font-medium">อาการ/ความเดือดร้อน/เหตุที่แจ้ง:</label>
+                                    <textarea x-model="urgentData.impactDetails" rows="3" class="w-full max-w-full rounded-lg border-gray-300 p-2.5 border text-sm outline-none focus:ring-1 focus:ring-red-400 shadow-sm bg-white box-border" placeholder="ระบุรายละเอียดอาการ..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. การดำเนินการ -->
+                    <div class="w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 border-l-4 border-red-500 pl-3">4. การดำเนินการทันที</h3>
+                        <div class="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200 w-full box-border">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                                <span class="text-sm font-medium whitespace-nowrap">ได้แจ้งหัวหน้าชุด เวลา</span>
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <input type="time" x-model="urgentData.actionLeaderTime" class="rounded border-gray-300 p-2 border w-32 outline-none focus:ring-1 focus:ring-red-400 bg-white box-border">
+                                    <span class="text-sm whitespace-nowrap">น.</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                                <span class="text-sm font-medium whitespace-nowrap">แจ้งอำเภอ/หน่วยงาน เวลา</span>
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <input type="time" x-model="urgentData.actionAgencyTime" class="rounded border-gray-300 p-2 border w-32 outline-none focus:ring-1 focus:ring-red-400 bg-white box-border">
+                                    <span class="text-sm whitespace-nowrap">น.</span>
+                                </div>
+                            </div>
+                            <div class="pt-2 w-full">
+                                <label class="block text-sm mb-1 text-gray-700 font-bold">คำสั่ง/คำแนะนำที่ได้รับ:</label>
+                                <textarea x-model="urgentData.actionOrders" rows="3" class="w-full max-w-full rounded-lg border-gray-300 p-2.5 border outline-none focus:ring-1 focus:ring-red-400 shadow-sm bg-white box-border" placeholder="ระบุคำสั่งที่ได้รับ (ถ้ามี)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ไฟล์เหตุด่วน -->
+                    <div class="w-full">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-2 border-l-4 border-red-500 pl-3">รายการหลักฐานประกอบ</h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-3 pl-4">อัปโหลดสูงสุด 5 ไฟล์ (ขนาดไม่เกิน 35MB/ไฟล์)</p>
+                        <div class="file-area rounded-xl p-6 text-center cursor-pointer bg-red-50 border-red-200 w-full box-border" @click="document.getElementById('urgent_file_input').click()">
+                            <i class="fas fa-video text-3xl sm:text-4xl text-red-400 mb-2"></i>
+                            <p class="text-sm font-medium text-red-800">แตะเพื่อแนบ ภาพถ่าย วิดีโอ หรือเสียง</p>
+                            <input type="file" id="urgent_file_input" @change="handleFileUpload($event, 'urgent', null)" multiple accept="image/*,video/mp4,video/quicktime,audio/*,.pdf" class="hidden">
+                        </div>
+                        <div x-show="urgentData.files.length > 0" class="mt-3 space-y-2 w-full">
+                            <template x-for="(f, index) in urgentData.files" :key="index">
+                                <div class="flex items-center justify-between bg-white p-2.5 rounded border border-gray-200 text-sm shadow-sm w-full box-border">
+                                    <div class="flex items-center truncate max-w-[85%]">
+                                        <i class="fas" :class="f.mimeType.includes('video') ? 'fa-video text-red-500' : 'fa-image text-blue-500'" class="mr-2 text-lg flex-shrink-0"></i>
+                                        <span class="truncate pr-2 font-medium" x-text="f.name"></span>
+                                    </div>
+                                    <button type="button" @click.stop="removeFile('urgent', null, index)" class="text-red-500 px-2 py-1 hover:bg-red-50 rounded flex-shrink-0"><i class="fas fa-times"></i></button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 5. สถานะ -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-4 border-t border-gray-200 w-full">
+                        <div class="bg-white p-3 sm:p-4 border border-gray-200 rounded-lg w-full box-border">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-2">5. สถานะการรายงาน *</h3>
+                            <select x-model="urgentData.reportStatus" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-1 focus:ring-red-400 bg-white box-border">
+                                <option value="" disabled>-- เลือกสถานะ --</option>
+                                <option value="รายงานทางโทรศัพท์แล้ว">รายงานทางโทรศัพท์แล้ว</option>
+                                <option value="รายงานในกลุ่มไลน์แล้ว">รายงานในกลุ่มไลน์แล้ว</option>
+                                <option value="ส่งภาพ/คลิป/เสียงประกอบแล้ว">ส่งภาพ/คลิป/เสียงประกอบแล้ว</option>
+                                <option value="อยู่ระหว่างรวบรวมหลักฐานเพิ่มเติม">อยู่ระหว่างรวบรวมหลักฐานเพิ่มเติม</option>
+                            </select>
+                        </div>
+                        <div class="bg-white p-3 sm:p-4 border border-gray-200 rounded-lg w-full box-border">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-2">ผู้บันทึก *</h3>
+                            <input type="text" x-model="urgentData.recorder" required class="w-full max-w-full rounded border-gray-300 p-2.5 border outline-none focus:ring-1 focus:ring-red-400 bg-white box-border" placeholder="ชื่อผู้ปฏิบัติหน้าที่">
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-4 sm:pt-6 w-full">
+                        <button type="submit" :disabled="isSubmitting" class="w-full sm:w-auto px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition-all disabled:opacity-50 text-base sm:text-lg">
+                            <i class="fas" :class="isSubmitting ? 'fa-spinner fa-spin' : 'fa-exclamation-circle'"></i> 
+                            <span x-text="isSubmitting ? 'กำลังดำเนินการ...' : 'ส่งรายงานเหตุด่วน'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PAGE 2: DASHBOARD VIEW                     -->
+        <!-- ========================================== -->
+        <div x-show="currentView === 'dashboard'" x-transition.opacity x-cloak>
+            <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                <div>
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">แดชบอร์ดสรุปผลกระทบต่อประชาชน</h1>
+                    <p class="text-gray-500 mt-1 text-sm sm:text-base">ข้อมูลเชิงสถิติจากการทดลองเดินเครื่องจักร</p>
+                    <div class="mt-2 inline-flex items-center gap-2 bg-blue-50 text-brand-700 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium border border-blue-100">
+                        <i class="far fa-calendar-alt"></i>
+                        <span>ข้อมูลตั้งแต่: <span x-text="dashboardData.dateRange.start"></span> ถึง <span x-text="dashboardData.dateRange.end"></span></span>
+                    </div>
+                </div>
+                <button @click="loadDashboardData()" class="w-full sm:w-auto justify-center text-brand-600 bg-white border border-brand-200 hover:bg-brand-50 px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
+                    <i class="fas fa-sync-alt" :class="{'animate-spin': isRefreshing}"></i> รีเฟรชข้อมูล
+                </button>
+            </div>
+
+            <!-- กล่องสถิติ -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div class="bg-white rounded-xl shadow-sm border border-red-100 p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div class="absolute top-0 w-full h-1 bg-red-500"></div>
+                    <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-users-slash"></i></div>
+                    <p class="text-xs sm:text-sm text-gray-500 font-medium mb-1">พบผลกระทบต่อประชาชน</p>
+                    <p class="text-3xl sm:text-4xl font-bold text-red-600"><span x-text="dashboardData.impactCount">0</span> <span class="text-base sm:text-lg font-normal text-gray-500">ครั้ง</span></p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-orange-100 p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div class="absolute top-0 w-full h-1 bg-orange-500"></div>
+                    <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-exclamation-triangle"></i></div>
+                    <p class="text-xs sm:text-sm text-gray-500 font-medium mb-1">เหตุด่วนสำคัญทั้งหมด</p>
+                    <p class="text-3xl sm:text-4xl font-bold text-orange-600"><span x-text="dashboardData.totalUrgent">0</span> <span class="text-base sm:text-lg font-normal text-gray-500">เหตุ</span></p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-blue-100 p-5 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div class="absolute top-0 w-full h-1 bg-brand-500"></div>
+                    <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-xl mb-3"><i class="fas fa-clipboard-check"></i></div>
+                    <p class="text-xs sm:text-sm text-gray-500 font-medium mb-1">รายงานประจำวันทั้งหมด</p>
+                    <p class="text-3xl sm:text-4xl font-bold text-brand-600"><span x-text="dashboardData.totalDaily">0</span> <span class="text-base sm:text-lg font-normal text-gray-500">ฉบับ</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-8">
+                <!-- กราฟ -->
+                <div class="lg:col-span-1 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-chart-pie text-brand-500 mr-2"></i> สัดส่วนประเภทปัญหา (เหตุด่วน)</h3>
+                    <div class="relative h-56 sm:h-64 w-full flex items-center justify-center">
+                        <canvas id="issueTypeChart"></canvas>
+                        <div x-show="dashboardData.totalUrgent === 0" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+                            <span class="text-gray-400 text-sm">ยังไม่มีข้อมูล</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ตารางเหตุด่วน -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden flex flex-col w-full">
+                    <div class="px-4 sm:px-6 py-3 border-b border-red-100 bg-red-50 flex justify-between items-center w-full">
+                        <h3 class="font-semibold text-red-800 text-sm sm:text-base"><i class="fas fa-exclamation-circle text-red-500 mr-2"></i> ประวัติการเกิดเหตุด่วนทั้งหมด</h3>
+                        <span class="text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full font-bold whitespace-nowrap" x-text="dashboardData.urgentHistory.length + ' รายการ'"></span>
+                    </div>
+                    <div class="overflow-x-auto flex-1 max-h-[400px] w-full">
+                        <table class="w-full text-sm text-left min-w-[800px]">
+                            <thead class="text-[11px] sm:text-xs text-gray-500 uppercase bg-white border-b border-gray-200 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="px-4 py-3 w-28 whitespace-nowrap">วัน/เวลา</th>
+                                    <th class="px-4 py-3 w-32">ประเภทเหตุ</th>
+                                    <th class="px-4 py-3 min-w-[200px]">ข้อเท็จจริงที่พบ</th>
+                                    <th class="px-4 py-3 w-28 text-center">ผลกระทบ</th>
+                                    <th class="px-4 py-3 w-24 text-center">หลักฐาน</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-if="dashboardData.urgentHistory.length === 0">
+                                    <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">ยังไม่มีข้อมูล</td></tr>
+                                </template>
+                                <template x-for="(event, i) in dashboardData.urgentHistory" :key="i">
+                                    <tr class="bg-white border-b hover:bg-red-50 align-top transition-colors">
+                                        <td class="px-4 py-3 whitespace-nowrap"><span class="font-bold text-gray-800" x-text="event.date"></span><br><span class="text-xs text-gray-500" x-text="event.time + ' น.'"></span></td>
+                                        <td class="px-4 py-3 text-red-600 font-bold text-xs" x-text="event.types"></td>
+                                        <td class="px-4 py-3 text-gray-700 whitespace-pre-line text-xs break-words" x-text="event.fact"></td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-2 py-1 rounded text-[10px] sm:text-[11px] font-bold inline-block whitespace-nowrap" 
+                                                  :class="event.impact.includes('ไม่พบ') ? 'bg-green-100 text-green-700' : 'bg-red-500 text-white'"
+                                                  x-text="event.impact.includes('ไม่พบ') ? 'ไม่พบ' : 'พบผลกระทบ'"></span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <template x-if="event.files && event.files.length > 0">
+                                                <button @click="viewFiles(event.files)" class="bg-white hover:bg-brand-50 text-brand-600 px-2 py-1.5 rounded text-[11px] font-bold border border-brand-200 shadow-sm flex items-center justify-center gap-1 w-full box-border">
+                                                    <i class="fas fa-play-circle"></i><span x-text="event.files.length"></span>
+                                                </button>
+                                            </template>
+                                            <template x-if="!event.files || event.files.length === 0"><span class="text-xs text-gray-300">-</span></template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ตารางเหตุการณ์ประจำวัน -->
+            <div class="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden flex flex-col w-full">
+                <div class="px-4 sm:px-6 py-3 border-b border-blue-100 bg-blue-50 flex justify-between items-center w-full">
+                    <h3 class="font-semibold text-brand-800 text-sm sm:text-base"><i class="fas fa-list-ul text-brand-500 mr-2"></i> บันทึกเหตุการณ์ระหว่างผลัด (จากรายงานประจำวัน)</h3>
+                    <span class="text-xs bg-blue-200 text-brand-800 px-2 py-1 rounded-full font-bold whitespace-nowrap" x-text="dashboardData.dailyEventsHistory.length + ' รายการ'"></span>
+                </div>
+                <div class="overflow-x-auto flex-1 max-h-[400px] w-full">
+                    <table class="w-full text-sm text-left min-w-[800px]">
+                        <thead class="text-[11px] sm:text-xs text-gray-500 uppercase bg-white border-b border-gray-200 sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th class="px-4 py-3 w-32 whitespace-nowrap">วันที่ / ผลัด</th>
+                                <th class="px-4 py-3 w-24">เวลา</th>
+                                <th class="px-4 py-3 min-w-[200px]">ข้อเท็จจริงที่พบ/สังเกตว่า</th>
+                                <th class="px-4 py-3 w-32">ผลกระทบ</th>
+                                <th class="px-4 py-3 w-24 text-center">หลักฐาน</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-if="dashboardData.dailyEventsHistory.length === 0">
+                                <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">ยังไม่มีข้อมูลเหตุการณ์</td></tr>
+                            </template>
+                            <template x-for="(event, i) in dashboardData.dailyEventsHistory" :key="i">
+                                <tr class="bg-white border-b hover:bg-blue-50 align-top transition-colors">
+                                    <td class="px-4 py-3 whitespace-nowrap"><span class="font-bold text-gray-800" x-text="event.date"></span><br><span class="text-xs text-brand-600 font-medium" x-text="event.shift === 'ทุกผลัด' ? 'ทุกผลัด' : 'ผลัดที่ ' + event.shift"></span></td>
+                                    <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap" x-text="event.time + ' น.'"></td>
+                                    <td class="px-4 py-3 text-gray-700 whitespace-pre-line text-xs break-words" x-text="event.detail"></td>
+                                    <td class="px-4 py-3">
+                                        <div x-show="event.impactStatus === 'มี'" class="text-xs text-red-600 font-bold bg-red-50 p-1 rounded border border-red-100">มีผลกระทบ<br><span class="font-normal text-gray-600 leading-tight" x-text="event.impactDetail"></span></div>
+                                        <div x-show="event.impactStatus !== 'มี'" class="text-xs text-gray-400">ไม่มี</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <template x-if="event.files && event.files.length > 0">
+                                            <button @click="viewFiles(event.files)" class="bg-white hover:bg-brand-50 text-brand-600 px-2 py-1.5 rounded text-[11px] font-bold border border-brand-200 shadow-sm flex items-center justify-center gap-1 w-full box-border">
+                                                <i class="fas fa-play-circle"></i><span x-text="event.files.length"></span>
+                                            </button>
+                                        </template>
+                                        <template x-if="!event.files || event.files.length === 0"><span class="text-xs text-gray-300">-</span></template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ⚠️ สำคัญมาก: เปลี่ยนเป็น URL API (Web App URL) ที่ได้จาก Google Apps Script ของคุณ
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdikm3n8AeQhMxCX3vZv8eBG2aUoKSyvdGzDhRNZ8IbWVV7sceYaSdX9w_XoHyyJwe1A/exec';
+        
+        // ขีดจำกัดไฟล์ (35 MB)
+        const MAX_FILE_SIZE = 35 * 1024 * 1024; 
+
+        function appData() {
+            return {
+                currentView: 'reporting', 
+                reportForm: 'daily', 
+                isSubmitting: false,
+                isRefreshing: false,
+                chartInstance: null,
+                
+                dashboardData: {
+                    totalUrgent: 0, totalDaily: 0, impactCount: 0, issueTypeStats: {},
+                    urgentHistory: [], dailyEventsHistory: [], dateRange: { start: '-', end: '-' }
+                },
+
+                observationLabels: {
+                    machine: '1. การเดินเครื่องจักร', smell: '2. กลิ่น', smoke: '3. ควัน/ไอ/ฝุ่น', 
+                    noise: '4. เสียง/แรงสั่นสะเทือน', water: '5. น้ำ/น้ำเสีย/ของเหลว', 
+                    waste: '6. กาก/ของเสีย/วัสดุ', impact: '7. ผลกระทบต่อประชาชน', other: '8. อื่น ๆ'
+                },
+                incidentTypeLabels: {
+                    smell: 'กลิ่นผิดปกติ', smoke: 'ควัน/ไอ/ฝุ่น', noise: 'เสียง/แรงสั่นสะเทือน',
+                    water: 'น้ำ/น้ำเสีย', waste: 'ของเสีย/กาก', impact: 'กระทบประชาชน',
+                    machine: 'เหตุผิดปกติของเครื่องจักร', other: 'อื่น ๆ'
+                },
+
+                dailyData: {
+                    dailyDate: new Date().toLocaleDateString('en-CA'), shift: '', shiftStartTime: '', shiftEndTime: '',
+                    dailyLocation: '', dailyTeamLeader: '', 
+                    member1: '', member2: '', member3: '', member4: '', member5: '',
+                    observations: { 
+                        machine: {status:'', detail:''}, smell: {status:'', detail:''}, smoke: {status:'', detail:''}, 
+                        noise: {status:'', detail:''}, water: {status:'', detail:''}, waste: {status:'', detail:''}, 
+                        impact: {status:'', detail:''}, other: {status:'', detail:''} 
+                    },
+                    eventsLog: [{ time: '', detail: '', impactStatus: 'ไม่มี', impactDetail: '', files: [], fileUrls: [] }],
+                    dailySummary: '', dailyRecorder: ''
+                },
+
+                urgentData: {
+                    incidentDate: new Date().toLocaleDateString('en-CA'),
+                    incidentTime: new Date().toLocaleTimeString('th-TH', { hour12: false }).substring(0, 5),
+                    location: '', reporter: '', teamLeader: '', urgencyLevel: '',
+                    incidentType: { smell: false, smoke: false, noise: false, water: false, waste: false, impact: false, machine: false, other: false },
+                    factFound: '', impactStatus: '', impactCount: '', impactDetails: '',
+                    actionLeaderTime: '', actionAgencyTime: '', actionOrders: '',
+                    reportStatus: '', recorder: '',
+                    files: [], fileUrls: []
+                },
+
+                initApp() {
+                    this.loadDashboardData();
+                    this.$watch('currentView', (view) => { if(view === 'dashboard') this.renderChart(); });
+                },
+
+                addEventLog() {
+                    this.dailyData.eventsLog.push({ time: '', detail: '', impactStatus: 'ไม่มี', impactDetail: '', files: [], fileUrls: [] });
+                },
+                removeEventLog(index) {
+                    if(this.dailyData.eventsLog.length > 1) this.dailyData.eventsLog.splice(index, 1);
+                },
+
+                // จัดการการเลือกไฟล์
+                handleFileUpload(event, type, index) {
+                    const selected = event.target.files;
+                    if (!selected || selected.length === 0) return;
+                    
+                    let targetArray = type === 'urgent' ? this.urgentData.files : this.dailyData.eventsLog[index].files;
+
+                    if (targetArray.length + selected.length > 5) {
+                        Swal.fire('เกินข้อจำกัด', 'สามารถแนบไฟล์ได้สูงสุด 5 ไฟล์ ต่อ 1 เหตุการณ์/การรายงาน', 'warning');
+                        event.target.value = ''; return;
+                    }
+
+                    Array.from(selected).forEach(file => {
+                        if (file.size > MAX_FILE_SIZE) {
+                            Swal.fire('ไฟล์ใหญ่เกินไป', `ไฟล์ <b>${file.name}</b> ขนาดใหญ่กว่า 35MB<br><span class="text-sm text-gray-500">เพื่อความเสถียรของระบบ กรุณาลดความละเอียดวิดีโอก่อนถ่าย หรือส่งไฟล์เต็มในกลุ่มไลน์แทน</span>`, 'error');
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            targetArray.push({ name: file.name, mimeType: file.type, base64: e.target.result });
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                    event.target.value = ''; 
+                },
+
+                removeFile(type, eventIndex, fileIndex) { 
+                    if(type === 'urgent') this.urgentData.files.splice(fileIndex, 1);
+                    else this.dailyData.eventsLog[eventIndex].files.splice(fileIndex, 1);
+                },
+
+                // ใช้ Fetch API ยิงข้อมูลแบบ text/plain ไปที่ Google Apps Script
+                uploadSingleFileAsync(fileObj, prefix) {
+                    return new Promise((resolve, reject) => {
+                        if (SCRIPT_URL.includes('YOUR_APP_SCRIPT_ID')) {
+                            setTimeout(() => resolve('https://example.com/mock-file.mp4'), 1000); // โหมด Preview
+                            return;
+                        }
+                        fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ป้องกันปัญหา CORS
+                            body: JSON.stringify({ action: 'upload', data: { name: fileObj.name, mimeType: fileObj.mimeType, base64: fileObj.base64, prefix: prefix } })
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+                            if(res.status === 'success') resolve(res.url);
+                            else reject(res.message);
+                        })
+                        .catch(err => reject('อินเทอร์เน็ตอาจขัดข้อง โปรดลองอีกครั้ง'));
+                    });
+                },
+
+                // กระบวนการส่งฟอร์มผ่าน Fetch API
+                async submitForm(type) {
+                    this.isSubmitting = true;
+                    let payload = JSON.parse(JSON.stringify(type === 'daily' ? this.dailyData : this.urgentData));
+                    payload.reportType = type;
+
+                    if (type === 'daily') {
+                        payload.shiftTime = `${payload.shiftStartTime} - ${payload.shiftEndTime}`;
+                    }
+
+                    try {
+                        let totalFiles = 0;
+                        if (type === 'urgent') totalFiles = this.urgentData.files.length;
+                        else this.dailyData.eventsLog.forEach(e => totalFiles += e.files.length);
+
+                        if (totalFiles > 0) {
+                            Swal.fire({ title: 'กำลังเตรียมส่งข้อมูล', html: 'กำลังอัปโหลดไฟล์หลักฐาน...<br><span class="text-sm text-red-500">กรุณาอย่าปิดหน้าจอนี้ หรือสลับแอป (อาจทำให้การเชื่อมต่อหลุด)</span>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                            
+                            let uploadedCount = 0;
+
+                            if (type === 'urgent') {
+                                for(let i = 0; i < this.urgentData.files.length; i++) {
+                                    uploadedCount++;
+                                    Swal.update({ html: `กำลังอัปโหลดไฟล์ที่ <b>${uploadedCount}/${totalFiles}</b>...<br><span class="text-sm text-red-500">กรุณาอย่าสลับหน้าจอ</span>`});
+                                    let url = await this.uploadSingleFileAsync(this.urgentData.files[i], 'ด่วน');
+                                    payload.fileUrls.push(url);
+                                }
+                            } else {
+                                for(let e = 0; e < this.dailyData.eventsLog.length; e++) {
+                                    for(let i = 0; i < this.dailyData.eventsLog[e].files.length; i++) {
+                                        uploadedCount++;
+                                        Swal.update({ html: `กำลังอัปโหลดไฟล์ที่ <b>${uploadedCount}/${totalFiles}</b>...<br><span class="text-sm text-red-500">กรุณาอย่าสลับหน้าจอ</span>`});
+                                        let url = await this.uploadSingleFileAsync(this.dailyData.eventsLog[e].files[i], `ประจำวัน_เหตุ${e+1}`);
+                                        payload.eventsLog[e].fileUrls.push(url);
+                                    }
+                                }
+                            }
+                        } else {
+                            Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                        }
+
+                        if (payload.reportType === 'urgent') delete payload.files;
+                        else payload.eventsLog.forEach(e => delete e.files);
+
+                        if (SCRIPT_URL.includes('YOUR_APP_SCRIPT_ID')) {
+                            // โหมด Preview สร้างข้อมูลจำลองแบบสมจริง
+                            setTimeout(() => {
+                                this.isSubmitting = false;
+                                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ (โหมดจำลอง)', confirmButtonColor: '#0ea5e9' }).then(() => {
+                                    this.resetForm(type); window.scrollTo(0,0); this.currentView = 'dashboard';
+                                });
+                            }, 1000);
+                            return;
+                        }
+
+                        // ส่งข้อมูลไปยัง Google Apps Script Web App
+                        fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ action: 'submit', data: payload })
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+                            this.isSubmitting = false;
+                            if (res.status === 'success') {
+                                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', confirmButtonColor: '#0ea5e9' }).then(() => {
+                                    this.resetForm(type);
+                                    this.loadDashboardData(); 
+                                    window.scrollTo(0,0);
+                                    this.currentView = 'dashboard'; 
+                                });
+                            } else Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+                        })
+                        .catch(err => {
+                            this.isSubmitting = false;
+                            Swal.fire('ข้อผิดพลาดการเชื่อมต่อ', err.toString(), 'error');
+                        });
+
+                    } catch (error) {
+                        this.isSubmitting = false;
+                        Swal.fire('ล้มเหลว', 'การอัปโหลดไฟล์มีปัญหา: ' + error, 'error');
+                    }
+                },
+
+                resetForm(type) {
+                    if (type === 'daily') {
+                        let t = this.dailyData;
+                        t.shift=''; t.shiftStartTime=''; t.shiftEndTime=''; t.dailyLocation=''; t.dailyTeamLeader='';
+                        t.member1=''; t.member2=''; t.member3=''; t.member4=''; t.member5='';
+                        Object.keys(t.observations).forEach(k => { t.observations[k] = {status:'', detail:''}; });
+                        t.eventsLog = [{ time: '', detail: '', impactStatus: 'ไม่มี', impactDetail: '', files: [], fileUrls: [] }];
+                        t.dailySummary=''; t.dailyRecorder='';
+                    } else {
+                        let t = this.urgentData;
+                        t.location=''; t.reporter=''; t.teamLeader=''; t.urgencyLevel='';
+                        Object.keys(t.incidentType).forEach(k => { t.incidentType[k] = false; });
+                        t.factFound=''; t.impactStatus=''; t.impactCount=''; t.impactDetails='';
+                        t.actionLeaderTime=''; t.actionAgencyTime=''; t.actionOrders='';
+                        t.reportStatus=''; t.recorder=''; t.files=[]; t.fileUrls=[];
+                    }
+                },
+
+                loadDashboardData() {
+                    this.isRefreshing = true;
+                    if (SCRIPT_URL.includes('YOUR_APP_SCRIPT_ID')) {
+                        // โหมด Preview สร้างข้อมูลจำลองแบบสมจริงเพื่อให้แสดงกราฟได้
+                        setTimeout(() => {
+                            this.isRefreshing = false;
+                            this.dashboardData = {
+                                totalUrgent: 2, totalDaily: 5, impactCount: 1,
+                                issueTypeStats: { 'กลิ่น': 2, 'เสียง': 1, 'ควัน/ฝุ่น': 1, 'เครื่องจักร': 0 },
+                                urgentHistory: [
+                                    { date: '08/10/2026', time: '14:30', types: 'กลิ่น, ควัน/ฝุ่น', fact: 'ชาวบ้านแจ้งว่ามีกลิ่นเหม็นไหม้รุนแรงและควันดำพุ่งออกจากปล่อง', impact: 'พบ/ได้รับแจ้งจากประชาชน', files: ['mock_url'] },
+                                    { date: '07/10/2026', time: '22:15', types: 'เสียง', fact: 'เสียงดังคล้ายระเบิด 1 ครั้ง ไม่ทราบสาเหตุ', impact: 'ไม่พบผู้ได้รับผลกระทบในขณะรายงาน', files: [] }
+                                ],
+                                dailyEventsHistory: [
+                                    { date: '08/10/2026', shift: '1', time: '10:00', detail: 'สังเกตเห็นน้ำเสียรั่วซึมบริเวณกำแพงด้านหลัง', impactStatus: 'ไม่มี', impactDetail: '', files: ['mock_url', 'mock_url'] }
+                                ],
+                                dateRange: { start: '01/10/2026', end: '08/10/2026' }
+                            };
+                            if(this.currentView === 'dashboard') this.renderChart();
+                        }, 800);
+                        return;
+                    }
+
+                    fetch(SCRIPT_URL + '?action=getDashboard')
+                    .then(res => res.json())
+                    .then(res => {
+                        this.isRefreshing = false;
+                        if(res.status === 'success') {
+                            this.dashboardData = res.data;
+                            if(this.currentView === 'dashboard') this.renderChart();
+                        }
+                    })
+                    .catch(err => { this.isRefreshing = false; });
+                },
+
+                viewFiles(files) {
+                    if (!files || files.length === 0) return;
+                    if (files.length === 1) {
+                        if(files[0] === 'mock_url') { Swal.fire('ตัวอย่างระบบ', 'นี่เป็นการจำลองการเปิดไฟล์หลักฐาน ระบบจริงจะเปิดไฟล์ในหน้าต่างใหม่', 'info'); return; }
+                        window.open(files[0], '_blank');
+                    } else {
+                        let html = '<div class="flex flex-col gap-2 mt-2">';
+                        files.forEach((url, idx) => {
+                            if(url === 'mock_url') url = '#';
+                            html += `<a href="${url}" ${url !== '#' ? 'target="_blank"' : ''} class="bg-gray-50 border border-gray-200 p-3 rounded-lg text-brand-600 hover:bg-brand-50 flex items-center gap-3 transition-colors text-left font-medium" onclick="if(this.getAttribute('href')==='#') { Swal.fire('ตัวอย่างระบบ','นี่เป็นการจำลองการเปิดไฟล์','info'); return false; }"><i class="fas fa-play-circle text-lg text-brand-500"></i> <span>เปิดไฟล์หลักฐานที่ ${idx + 1}</span></a>`;
+                        });
+                        html += '</div>';
+                        Swal.fire({ title: 'ไฟล์หลักฐาน', html: html, showConfirmButton: true, confirmButtonText: 'ปิดหน้าต่าง', confirmButtonColor: '#64748b' });
+                    }
+                },
+
+                renderChart() {
+                    if(this.chartInstance) this.chartInstance.destroy();
+                    const ctx = document.getElementById('issueTypeChart');
+                    if(!ctx) return;
+                    
+                    const stats = this.dashboardData.issueTypeStats;
+                    const labels = []; const data = [];
+                    Object.keys(stats).forEach(k => { if (stats[k] > 0) { labels.push(k); data.push(stats[k]); } });
+
+                    if (data.length === 0) {
+                         this.chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['ไม่มีข้อมูล'], datasets: [{ data: [1], backgroundColor: ['#f1f5f9'] }] }, options: { plugins: { tooltip: {enabled: false}, legend: {display: false} }, cutout: '70%' } });
+                        return;
+                    }
+
+                    this.chartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{ data: data, backgroundColor: ['#f59e0b', '#64748b', '#ef4444', '#3b82f6', '#8b5cf6', '#10b981'], borderWidth: 2, borderColor: '#ffffff' }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: window.innerWidth < 640 ? 'bottom' : 'right', labels: { font: { family: 'Sarabun' }, boxWidth: 15 } } }, cutout: '60%' }
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
