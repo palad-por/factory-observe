@@ -111,14 +111,6 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-1">วันที่ปฏิบัติหน้าที่ *</label>
                             <input type="date" x-model="dailyData.dailyDate" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
                         </div>
-                        <div class="w-full md:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">เวลาเข้ากะ (ตั้งแต่ - ถึง) *</label>
-                            <div class="flex items-center gap-2">
-                                <input type="time" x-model="dailyData.shiftStartTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
-                                <span class="text-gray-500 font-bold">-</span>
-                                <input type="time" x-model="dailyData.shiftEndTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
-                            </div>
-                        </div>
                         <div class="w-full relative">
                             <label class="block text-sm font-semibold text-gray-700 mb-1">ผลัดที่ *</label>
                             <div class="relative">
@@ -132,6 +124,14 @@
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                                     <i class="fas fa-chevron-down text-xs"></i>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="w-full md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">เวลาเข้ากะ (ตั้งแต่ - ถึง) *</label>
+                            <div class="flex items-center gap-2">
+                                <input type="time" x-model="dailyData.shiftStartTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
+                                <span class="text-gray-500 font-bold">-</span>
+                                <input type="time" x-model="dailyData.shiftEndTime" required class="w-full max-w-full rounded border-gray-300 p-2.5 border focus:ring-2 focus:ring-brand-500 outline-none bg-white box-border">
                             </div>
                         </div>
                         
@@ -562,6 +562,44 @@
                 </div>
             </div>
 
+            <!-- ตารางสถานะการทดลองเดินเครื่องจักร -->
+            <div class="bg-white rounded-xl shadow-sm border border-purple-100 overflow-hidden flex flex-col w-full mb-8">
+                <div class="px-4 sm:px-6 py-3 border-b border-purple-100 bg-purple-50 flex justify-between items-center w-full">
+                    <h3 class="font-semibold text-purple-800 text-sm sm:text-base"><i class="fas fa-cogs text-purple-500 mr-2"></i> สถานะการทดลองเดินเครื่องจักร (เฉพาะผลัดที่พบความผิดปกติ)</h3>
+                    <span class="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full font-bold whitespace-nowrap" x-text="dashboardData.dailyObservationsHistory.length + ' รายการ'"></span>
+                </div>
+                <div class="overflow-x-auto flex-1 max-h-[400px] w-full">
+                    <table class="w-full text-sm text-left min-w-[600px]">
+                        <thead class="text-[11px] sm:text-xs text-gray-500 uppercase bg-white border-b border-gray-200 sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th class="px-4 py-3 w-32 whitespace-nowrap">วันที่ / ผลัด</th>
+                                <th class="px-4 py-3 min-w-[200px]">รายการที่พบความผิดปกติ และ รายละเอียด</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-if="dashboardData.dailyObservationsHistory.length === 0">
+                                <tr><td colspan="2" class="px-6 py-10 text-center text-gray-400">ไม่พบความผิดปกติจากการเดินเครื่องจักร</td></tr>
+                            </template>
+                            <template x-for="(obs, i) in dashboardData.dailyObservationsHistory" :key="i">
+                                <tr class="bg-white border-b hover:bg-purple-50 align-top transition-colors">
+                                    <td class="px-4 py-3 whitespace-nowrap"><span class="font-bold text-gray-800" x-text="obs.date"></span><br><span class="text-xs text-purple-600 font-medium" x-text="obs.shift === 'ทุกผลัด' ? 'ทุกผลัด' : 'ผลัดที่ ' + obs.shift"></span></td>
+                                    <td class="px-4 py-3">
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <template x-for="(issue, j) in obs.issues" :key="j">
+                                                <li class="text-xs text-gray-700">
+                                                    <span class="font-semibold text-red-600" x-text="issue.item + ':'"></span>
+                                                    <span class="ml-1" x-text="issue.detail"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- ตารางเหตุการณ์ประจำวัน -->
             <div class="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden flex flex-col w-full">
                 <div class="px-4 sm:px-6 py-3 border-b border-blue-100 bg-blue-50 flex justify-between items-center w-full">
@@ -627,7 +665,7 @@
                 
                 dashboardData: {
                     totalUrgent: 0, totalDaily: 0, impactCount: 0, issueTypeStats: {},
-                    urgentHistory: [], dailyEventsHistory: [], dateRange: { start: '-', end: '-' }
+                    urgentHistory: [], dailyEventsHistory: [], dailyObservationsHistory: [], dateRange: { start: '-', end: '-' }
                 },
 
                 observationLabels: {
@@ -846,6 +884,9 @@
                                 ],
                                 dailyEventsHistory: [
                                     { date: '08/10/2026', shift: '1', time: '10:00', detail: 'สังเกตเห็นน้ำเสียรั่วซึมบริเวณกำแพงด้านหลัง', impactStatus: 'ไม่มี', impactDetail: '', files: ['mock_url', 'mock_url'] }
+                                ],
+                                dailyObservationsHistory: [
+                                    { date: '08/10/2026', shift: '1', issues: [{ item: 'กลิ่น', detail: 'มีกลิ่นเหม็นเปรี้ยวจางๆ ลอยมาเป็นระยะ' }, { item: 'เสียง/สั่นสะเทือน', detail: 'เสียงเครื่องจักรดังผิดปกติ' }] }
                                 ],
                                 dateRange: { start: '01/10/2026', end: '08/10/2026' }
                             };
